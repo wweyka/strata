@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# Supabase CLI
+supabase/.branches/
+supabase/.temp/
