@@ -35,7 +35,7 @@ shows them as **waiting for AI setup**. Nothing is simulated.
 
 ## Running locally
 
-Requirements: Node 22, [uv](https://docs.astral.sh/uv/), the [Supabase CLI](https://supabase.com/docs/guides/local-development) and Docker.
+Requirements: Node 22, [uv](https://docs.astral.sh/uv/), the [Supabase CLI](https://supabase.com/docs/guides/local-development) (3.1 or newer, as pinned in CI) and Docker.
 
 ```bash
 npm install

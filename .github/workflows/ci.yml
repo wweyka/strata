@@ -34,7 +34,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned: new CLI releases can reject older config.toml keys. Bump deliberately.
+          version: 3.1.0
       - name: Start local Supabase (applies migrations)
         run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor
       - name: Row-level security tests (pgTAP)

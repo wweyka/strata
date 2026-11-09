@@ -26,7 +26,7 @@ enabled = true
 port = 54323
 
 # Local mail catcher (Mailpit). Confirmation and reset emails appear at http://127.0.0.1:54324.
-[inbucket]
+[local_smtp]
 enabled = true
 port = 54324
 
@@ -49,7 +49,7 @@ minimum_password_length = 8
 email_sent = 30
 
 [auth.email]
-enable_signup = true
+enabled = true
 double_confirm_changes = true
 enable_confirmations = true
 secure_password_change = true
