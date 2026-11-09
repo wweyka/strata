@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "Strata",
+    "slug": "strata",
+    "scheme": "strata",
+    "version": "0.1.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#FAFAF7",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.strata.learn"
+    },
+    "android": {
+      "package": "app.strata.learn",
+      "adaptiveIcon": {
+        "backgroundColor": "#16150F",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-localization",
+      "expo-font",
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 120,
+          "resizeMode": "contain",
+          "backgroundColor": "#FAFAF7",
+          "dark": { "backgroundColor": "#0F0F0D" }
+        }
+      ],
+      [
+        "expo-document-picker",
+        { "iCloudContainerEnvironment": "Production" }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

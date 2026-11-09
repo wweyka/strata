@@ -1,0 +1,3 @@
+-- Local seed data. Intentionally empty: plans are created by migrations, and every user's
+-- profile, learning modes and preferences are created by handle_new_user() at sign-up.
+-- Create test accounts through the app so they follow the real sign-up path.

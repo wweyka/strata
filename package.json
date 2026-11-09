@@ -1,0 +1,21 @@
+{
+  "name": "strata",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "app": "npm --workspace @strata/app run start",
+    "web": "npm --workspace @strata/app run web",
+    "typecheck": "npm --workspaces --if-present run typecheck",
+    "lint": "npm --workspaces --if-present run lint",
+    "test": "npm --workspaces --if-present run test",
+    "check:enums": "node scripts/check-enums.mjs",
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "e2e": "node apps/app/e2e/full-flow.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
