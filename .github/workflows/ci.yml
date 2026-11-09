@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    name: App (types, lint, contracts)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check:enums
+      - run: npm run check:i18n
+      - run: npm run typecheck
+      - run: npm run lint
+      - name: Web build
+        run: npx expo export --platform web
+        working-directory: apps/app
+
+  backend:
+    name: Database and AI service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start local Supabase (applies migrations)
+        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor
+      - name: Row-level security tests (pgTAP)
+        run: supabase test db
+      - uses: astral-sh/setup-uv@v6
+      - name: Lint
+        working-directory: services/ai
+        run: uv run ruff check . && uv run ruff format --check .
+      - name: Tests
+        working-directory: services/ai
+        env:
+          STRATA_TEST_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: uv run pytest -q
