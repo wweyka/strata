@@ -1,10 +1,11 @@
-"""Worker entry point: `python -m strata_ai.worker.main`."""
+"""Worker entry point: `uv run strata-worker` (or `python -m strata_ai.worker.main`)."""
 
 import asyncio
 import logging
 
 from strata_ai.core.config import get_settings
 from strata_ai.core.db import create_pool
+from strata_ai.core.eventloop import asyncio_loop_factory
 from strata_ai.worker.queue import Handler, Worker
 
 # Job handlers register here as each phase lands (ingestion in Phase 2, video in Phase 3).
@@ -22,5 +23,9 @@ async def main() -> None:
         await pool.close()
 
 
+def run() -> None:
+    asyncio.run(main(), loop_factory=asyncio_loop_factory())
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    run()

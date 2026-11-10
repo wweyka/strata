@@ -802,7 +802,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.9" },
     { name = "pydantic-settings", specifier = ">=2.6" },
     { name = "pyjwt", extras = ["crypto"], specifier = ">=2.10" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.36" },
 ]
 
 [package.metadata.requires-dev]

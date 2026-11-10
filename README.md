@@ -45,11 +45,14 @@ cp apps/app/.env.example apps/app/.env.local          # fill in the anon key pri
 cp services/ai/.env.example services/ai/.env          # fill in the service role key
 
 cd services/ai && uv sync
-uv run uvicorn strata_ai.main:app --port 8000        # API
-uv run python -m strata_ai.worker.main               # job worker (separate terminal)
+uv run strata-api                                     # API on http://127.0.0.1:8000
+uv run strata-worker                                  # job worker (separate terminal)
 
 npm run web                                           # app at http://localhost:8081
 ```
+
+On Windows, use `copy` instead of `cp`, and keep the clone in a path without `#`, which can break the Expo
+bundler. `strata-api` and `strata-worker` pick an event loop that works on Windows.
 
 Every variable is described in [docs/environment.md](docs/environment.md).
 
