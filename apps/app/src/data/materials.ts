@@ -16,16 +16,25 @@ import type { Material } from './types';
 
 const materialsKey = (userId?: string) => ['materials', userId] as const;
 
-export function useMaterials() {
+let liveChannels = 0;
+
+/**
+ * Keep the learner's materials current while they are signed in: status changes
+ * (queued → processing → ready) arrive live from the workers. Mounted once, by the signed-in
+ * layout, so screens that read materials never open channels of their own.
+ */
+export function useMaterialsLiveUpdates() {
   const { session } = useAuth();
   const userId = session?.user.id;
   const client = useQueryClient();
 
-  // Status changes (queued → processing → ready) arrive live from the workers.
   useEffect(() => {
     if (!userId) return;
+    // Each subscription gets its own topic. supabase-js hands back an existing channel when the
+    // topic matches (for example while the previous one is still closing), and adding listeners
+    // to a channel that has already subscribed throws.
     const channel = db()
-      .channel(`materials:${userId}`)
+      .channel(`materials:${userId}:${++liveChannels}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'materials', filter: `user_id=eq.${userId}` },
@@ -33,9 +42,14 @@ export function useMaterials() {
       )
       .subscribe();
     return () => {
-      db().removeChannel(channel);
+      void db().removeChannel(channel);
     };
   }, [userId, client]);
+}
+
+export function useMaterials() {
+  const { session } = useAuth();
+  const userId = session?.user.id;
 
   return useQuery({
     queryKey: materialsKey(userId),

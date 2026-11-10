@@ -5,6 +5,7 @@ import { Pressable, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
+import { useMaterialsLiveUpdates } from '@/data/materials';
 import { Wordmark } from '@/features/auth/AuthShell';
 import { Text, breakpoints, radius, space, useTheme } from '@/ui';
 
@@ -62,6 +63,8 @@ export default function AppLayout() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const wide = width >= breakpoints.wide;
+  // One live subscription for the whole signed-in area; tabs and screens share its results.
+  useMaterialsLiveUpdates();
 
   const tabs = [
     { name: 'discover', href: '/discover', icon: Compass, label: t('nav.discover') },
