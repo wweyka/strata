@@ -6,11 +6,13 @@ jobs are put back in the queue once the credentials are configured.
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 import socket
 import uuid
 from collections.abc import Awaitable, Callable, Iterable
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any
 
@@ -37,20 +39,45 @@ SUBJECT_TABLES: dict[str, str] = {"material": "materials"}
 Job = dict[str, Any]
 Handler = Callable[[Job, "JobContext"], Awaitable[dict[str, Any] | None]]
 
+HEARTBEAT_SECONDS = 30.0
+
+# (user_id, job_id) of the job running in this task, for the AI usage ledger.
+CURRENT_JOB: ContextVar[tuple[uuid.UUID | None, uuid.UUID] | None] = ContextVar("current_job", default=None)
+
+
+class PermanentJobError(Exception):
+    """A failure that retrying cannot fix (unsupported file, quota, rejected key...).
+
+    `reason` is a stable code the app translates; `message` is for logs and support.
+    """
+
+    def __init__(self, reason: str, message: str, **details: Any) -> None:
+        super().__init__(message)
+        self.reason = reason
+        self.message = message
+        self.details = details
+
+    def as_error(self) -> dict[str, Any]:
+        return {"reason": self.reason, "message": self.message[:500], **self.details}
+
 
 @dataclass
 class JobContext:
     pool: AsyncConnectionPool
     settings: Settings
     job_id: uuid.UUID
+    subject_type: str | None = None
+    subject_id: uuid.UUID | None = None
 
     async def report(self, stage: str, progress: float) -> None:
-        """Progress shown to the user live (jobs are in the realtime publication)."""
-        async with self.pool.connection() as conn:
+        """Progress shown to the user live (jobs and materials are in the realtime publication)."""
+        progress = max(0.0, min(1.0, progress))
+        async with self.pool.connection() as conn, conn.transaction():
             await conn.execute(
                 "update public.jobs set stage = %s, progress = %s, heartbeat_at = now() where id = %s",
-                (stage, max(0.0, min(1.0, progress)), self.job_id),
+                (stage, progress, self.job_id),
             )
+            await _set_subject(conn, self.subject_type, self.subject_id, "processing", None, stage, progress)
 
 
 class Worker:
@@ -133,13 +160,30 @@ class Worker:
 
     async def _run(self, job: Job) -> None:
         handler = self.handlers[job["kind"]]
-        context = JobContext(self.pool, self.settings, job["id"])
+        context = JobContext(self.pool, self.settings, job["id"], job["subject_type"], job["subject_id"])
+        async with self.pool.connection() as conn:
+            await _set_subject(
+                conn, job["subject_type"], job["subject_id"], "processing", None, "starting", 0.0
+            )
+        token = CURRENT_JOB.set((job["user_id"], job["id"]))
+        heartbeat = asyncio.create_task(self._heartbeat(job["id"]))
         try:
             result = await handler(job, context)
         except Exception as exc:  # noqa: BLE001 - every failure is recorded on the job
-            log.exception("job %s (%s) failed", job["id"], job["kind"])
-            final = job["attempts"] >= job["max_attempts"]
-            error = {"reason": "handler_error", "message": str(exc)[:500]}
+            permanent = isinstance(exc, PermanentJobError)
+            if permanent:
+                log.warning("job %s (%s) cannot be completed: %s", job["id"], job["kind"], exc)
+            else:
+                log.exception("job %s (%s) failed", job["id"], job["kind"])
+            final = permanent or job["attempts"] >= job["max_attempts"]
+            error = (
+                exc.as_error()
+                if isinstance(exc, PermanentJobError)
+                else {
+                    "reason": "handler_error",
+                    "message": str(exc)[:500],
+                }
+            )
             async with self.pool.connection() as conn, conn.transaction():
                 await conn.execute(
                     """update public.jobs
@@ -151,7 +195,16 @@ class Worker:
                 )
                 if final:
                     await _set_subject(conn, job["subject_type"], job["subject_id"], "failed", error)
+                else:
+                    await _set_subject(
+                        conn, job["subject_type"], job["subject_id"], "queued", error, "retrying", 0.0
+                    )
             return
+        finally:
+            heartbeat.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await heartbeat
+            CURRENT_JOB.reset(token)
         async with self.pool.connection() as conn:
             await conn.execute(
                 """update public.jobs
@@ -160,6 +213,16 @@ class Worker:
                     where id = %s""",
                 (json.dumps(result or {}), job["id"]),
             )
+
+    async def _heartbeat(self, job_id: uuid.UUID) -> None:
+        """Keep the claim alive during long AI calls, so the job is not handed to another worker."""
+        while True:
+            await asyncio.sleep(HEARTBEAT_SECONDS)
+            try:
+                async with self.pool.connection() as conn:
+                    await conn.execute("update public.jobs set heartbeat_at = now() where id = %s", (job_id,))
+            except Exception:  # noqa: BLE001 - a missed beat is retried on the next tick
+                log.warning("heartbeat for job %s failed", job_id, exc_info=True)
 
     async def run_forever(self, poll_seconds: float = 5.0) -> None:
         log.info("worker %s handling %s", self.name, ", ".join(self.kinds) or "nothing")
@@ -194,12 +257,16 @@ async def _set_subject(
     subject_id: uuid.UUID | None,
     status: str,
     error: dict[str, Any] | None,
+    stage: str | None = None,
+    progress: float | None = None,
 ) -> None:
     table = SUBJECT_TABLES.get(subject_type or "")
     if table is None or subject_id is None:
         return
     # Table name comes from the fixed mapping above, never from input.
     await conn.execute(
-        f"update public.{table} set status = %s, stage = %s, error = %s where id = %s",  # noqa: S608
-        (status, status, json.dumps(error) if error else None, subject_id),
+        f"""update public.{table}
+               set status = %s, stage = %s, error = %s, progress = coalesce(%s, progress)
+             where id = %s""",  # noqa: S608
+        (status, stage or status, json.dumps(error) if error else None, progress, subject_id),
     )

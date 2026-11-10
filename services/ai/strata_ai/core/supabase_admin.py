@@ -1,5 +1,7 @@
 """Thin client for the Supabase Auth admin and Storage APIs, used with the service role key."""
 
+from urllib.parse import quote
+
 import httpx
 
 USER_BUCKETS = ("materials", "generated", "avatars")
@@ -49,6 +51,23 @@ class SupabaseAdmin:
             if len(items) < 1000:
                 return paths
             offset += 1000
+
+    async def download(self, bucket: str, path: str, max_bytes: int) -> bytes:
+        """The object's bytes, refusing anything larger than `max_bytes`."""
+        url = f"/storage/v1/object/{bucket}/{quote(path)}"
+        async with self._client.stream("GET", url, timeout=300.0) as response:
+            if response.status_code in (400, 404):
+                raise SupabaseAdminError(f"{bucket}/{path} was not found in storage")
+            if response.is_error:
+                raise SupabaseAdminError(f"downloading from {bucket} failed: {response.status_code}")
+            chunks: list[bytes] = []
+            size = 0
+            async for chunk in response.aiter_bytes():
+                size += len(chunk)
+                if size > max_bytes:
+                    raise SupabaseAdminError(f"{bucket}/{path} is larger than {max_bytes} bytes")
+                chunks.append(chunk)
+        return b"".join(chunks)
 
     async def remove_files(self, bucket: str, paths: list[str]) -> None:
         for start in range(0, len(paths), 500):

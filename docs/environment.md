@@ -46,6 +46,19 @@ Each key is optional to start. A missing key never breaks the app: jobs that nee
 | `GEMINI_API_KEY` | Illustrations and optional generated clips | Phase 3 (optional) |
 | `HEYGEN_API_KEY` | Optional virtual-instructor style | Phase 3 (optional) |
 
+Where to get them: `ANTHROPIC_API_KEY` from https://platform.claude.com/settings/keys and
+`VOYAGE_API_KEY` from the Voyage AI dashboard (https://dashboard.voyageai.com, API keys). Both go in `services/ai/.env` (or the
+host's secret settings), never in the app.
+
+Optional model settings (defaults shown):
+
+| Variable | Default | Used for |
+| --- | --- | --- |
+| `LLM_MODEL` | `claude-opus-5-5` | Reading materials: topics, key ideas, verified quotes |
+| `LLM_VISION_MODEL` | `claude-sonnet-5-5` | Transcribing scanned pages and photos |
+| `EMBEDDING_MODEL` | `voyage-4` | Search index (1024 dimensions, matching the database) |
+| `OCR_MAX_PAGES` | `300` | Scanned pages read per material; the rest are skipped and the user is told |
+
 ## Supabase project settings
 
 1. **Run the migrations:** `supabase link --project-ref <ref>` then `supabase db push`.

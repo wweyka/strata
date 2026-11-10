@@ -32,9 +32,14 @@ class Settings(BaseSettings):
     elevenlabs_api_key: SecretStr | None = None
     gemini_api_key: SecretStr | None = None
     heygen_api_key: SecretStr | None = None
+    # Reading and organising materials (the quality-critical step).
     llm_model: str = "claude-opus-5-5"
-    embedding_model: str = "voyage-3.5"
-    embedding_dimensions: int = 1024
+    # Transcribing scanned pages and photos.
+    llm_vision_model: str = "claude-sonnet-5-5"
+    embedding_model: str = "voyage-4"
+    embedding_dimensions: int = 1024  # must match the vector(1024) columns
+    # Scanned pages read per material; pages past the cap are skipped and reported to the user.
+    ocr_max_pages: int = 300
 
     @field_validator("allowed_origins", mode="before")
     @classmethod

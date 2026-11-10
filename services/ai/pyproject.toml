@@ -11,6 +11,14 @@ dependencies = [
   "pyjwt[crypto]>=2.10",
   "httpx>=0.28",
   "psycopg[binary,pool]>=3.2",
+  "anthropic>=2.7.0",
+  "pypdfium2>=5.15.2",
+  "python-docx>=1.2.0",
+  "python-pptx>=1.0.2",
+  "pillow>=13.0.0",
+  "pillow-heif>=1.8.1",
+  "charset-normalizer>=3.5.2",
+  "beautifulsoup4>=4.15.0",
 ]
 
 [project.scripts]

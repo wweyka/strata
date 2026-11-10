@@ -1,16 +1,14 @@
 import type { MaterialKind } from './enums';
 
-/** File types the ingestion pipeline accepts, by MIME type. */
+/**
+ * File types the ingestion pipeline can read, by MIME type. Kept in step with SUPPORTED_TYPES in
+ * services/ai/strata_ai/ingest/extract.py (a test there compares the two).
+ */
 export const ACCEPTED_MATERIAL_TYPES: Record<string, MaterialKind> = {
   'application/pdf': 'pdf',
   'application/epub+zip': 'document',
-  'application/msword': 'document',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'document',
-  'application/vnd.oasis.opendocument.text': 'document',
-  'application/rtf': 'document',
-  'application/vnd.ms-powerpoint': 'presentation',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'presentation',
-  'application/vnd.oasis.opendocument.presentation': 'presentation',
   'image/png': 'image',
   'image/jpeg': 'image',
   'image/webp': 'image',
@@ -23,13 +21,8 @@ export const ACCEPTED_MATERIAL_TYPES: Record<string, MaterialKind> = {
 const EXTENSION_TYPES: Record<string, string> = {
   pdf: 'application/pdf',
   epub: 'application/epub+zip',
-  doc: 'application/msword',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  odt: 'application/vnd.oasis.opendocument.text',
-  rtf: 'application/rtf',
-  ppt: 'application/vnd.ms-powerpoint',
   pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  odp: 'application/vnd.oasis.opendocument.presentation',
   png: 'image/png',
   jpg: 'image/jpeg',
   jpeg: 'image/jpeg',
