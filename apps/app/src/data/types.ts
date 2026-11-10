@@ -100,7 +100,7 @@ export type Material = {
   status: MaterialStatus;
   stage: string | null;
   progress: number;
-  error: { reason?: string; capabilities?: string[]; configure?: string[]; message?: string } | null;
+  error: ProcessingError | null;
   created_at: string;
   updated_at: string;
 };
@@ -121,4 +121,77 @@ export type Subscription = {
   status: 'active' | 'trialing' | 'past_due' | 'cancelled';
   current_period_end: string | null;
   plans: { name: string; limits: PlanLimits } | null;
+};
+
+/** Why processing stopped. `reason` is a stable code the app translates. */
+export type ProcessingError = {
+  reason?: string;
+  message?: string;
+  capabilities?: string[];
+  configure?: string[];
+  limit?: number;
+  pages?: number;
+  used?: number;
+};
+
+export type ProcessingWarning =
+  | { kind: 'scans_skipped'; count: number; first: number; limit: number }
+  | { kind: 'illegible_pages'; count: number; pages: number[] }
+  | { kind: 'no_topics' };
+
+export type IngestJob = {
+  status: string;
+  stage: string | null;
+  result: { stats?: Record<string, number | null>; warnings?: ProcessingWarning[] } | null;
+  error: ProcessingError | null;
+  updated_at: string;
+};
+
+export type Chapter = {
+  id: string;
+  parent_id: string | null;
+  title: string;
+  level: number;
+  ordinal: number;
+  page_start: number | null;
+  page_end: number | null;
+};
+
+export type TopicListItem = {
+  id: string;
+  title: string;
+  difficulty: number | null;
+  importance: number;
+  parent_topic_id: string | null;
+  knowledge_items: { count: number }[];
+};
+
+export type KnowledgeKind = 'definition' | 'fact' | 'example' | 'formula' | 'objective' | 'misconception' | 'key_term';
+export type ContentBasis = 'source' | 'ai_supplement';
+
+export type KnowledgeItem = {
+  id: string;
+  kind: KnowledgeKind;
+  term: string | null;
+  content: string;
+  basis: ContentBasis;
+  material_id: string | null;
+  citations: { page_number: number | null; quote: string | null }[];
+};
+
+export type TopicLink = { id: string; title: string };
+
+export type TopicDetail = {
+  id: string;
+  title: string;
+  summary: string | null;
+  difficulty: number | null;
+  subject: string | null;
+  parent: TopicLink | null;
+  children: TopicLink[];
+  learnFirst: TopicLink[];
+  leadsTo: TopicLink[];
+  related: TopicLink[];
+  items: KnowledgeItem[];
+  sources: { material_id: string; chapter: string; page_start: number | null; page_end: number | null }[];
 };

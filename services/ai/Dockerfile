@@ -1,6 +1,6 @@
 # One image for both processes:
 #   API:    uvicorn strata_ai.main:app --host 0.0.0.0 --port 8000
-#   Worker: python -m strata_ai.worker.main
+#   Worker: strata-worker
 FROM python:3.13-slim
 COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /usr/local/bin/uv
 WORKDIR /app

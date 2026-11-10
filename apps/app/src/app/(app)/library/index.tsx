@@ -1,13 +1,14 @@
 import { Ellipsis, FolderOpen, Pencil, Trash2, Upload, X } from 'lucide-react-native';
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { describeError } from '@/data/errors';
 import { useDeleteMaterial, useMaterials, useRenameMaterial } from '@/data/materials';
 import type { Material } from '@/data/types';
 import { MaterialIcon } from '@/features/library/MaterialIcon';
-import { formatBytes, statusTone } from '@/features/library/status';
+import { formatBytes, stageLabel, statusTone } from '@/features/library/status';
 import { useUploadFlow } from '@/features/library/useUploadFlow';
 import {
   Button,
@@ -117,31 +118,49 @@ export default function LibraryScreen() {
               <View key={m.id}>
                 {i > 0 ? <Divider inset={space[4] + 40 + space[3]} /> : null}
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space[3], padding: space[4] }}>
-                  <MaterialIcon kind={m.kind} />
-                  <View style={{ flex: 1, minWidth: 0, gap: space[1] }}>
-                    <Text variant="bodyMedium" numberOfLines={2}>
-                      {m.title}
-                    </Text>
-                    <Text variant="small" color="textMuted" numberOfLines={1}>
-                      {[t(`library.kind.${m.kind}`), formatBytes(m.size_bytes, i18n.language), date.format(new Date(m.created_at))].join(' · ')}
-                    </Text>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space[2], marginTop: space[1] }}>
-                      <Pill label={t(`library.status.${m.status}`)} tone={statusTone[m.status]} />
-                      {m.status === 'awaiting_credentials' ? (
-                        <Text variant="caption" color="textMuted">
-                          {t('library.awaitingHint')}
-                        </Text>
-                      ) : null}
-                      {m.status === 'failed' ? (
-                        <Text variant="caption" color="danger">
-                          {t('library.failedHint')}
-                        </Text>
+                  <Pressable
+                    accessibilityRole="link"
+                    accessibilityLabel={t('library.openMaterial', { title: m.title })}
+                    onPress={() => router.push(`/library/${m.id}`)}
+                    style={({ pressed }) => ({
+                      flex: 1,
+                      minWidth: 0,
+                      flexDirection: 'row',
+                      gap: space[3],
+                      opacity: pressed ? 0.7 : 1,
+                    })}
+                  >
+                    <MaterialIcon kind={m.kind} />
+                    <View style={{ flex: 1, minWidth: 0, gap: space[1] }}>
+                      <Text variant="bodyMedium" numberOfLines={2}>
+                        {m.title}
+                      </Text>
+                      <Text variant="small" color="textMuted" numberOfLines={1}>
+                        {[t(`library.kind.${m.kind}`), formatBytes(m.size_bytes, i18n.language), date.format(new Date(m.created_at))].join(' · ')}
+                      </Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space[2], marginTop: space[1] }}>
+                        <Pill label={t(`library.status.${m.status}`)} tone={statusTone[m.status]} />
+                        {m.status === 'awaiting_credentials' ? (
+                          <Text variant="caption" color="textMuted">
+                            {t('library.awaitingHint')}
+                          </Text>
+                        ) : null}
+                        {m.status === 'failed' ? (
+                          <Text variant="caption" color="danger">
+                            {t('library.failedHint')}
+                          </Text>
+                        ) : null}
+                      </View>
+                      {m.status === 'processing' ? (
+                        <>
+                          <ProgressBar value={m.progress} label={stageLabel(m.stage, t)} />
+                          <Text variant="caption" color="textMuted">
+                            {stageLabel(m.stage, t)}
+                          </Text>
+                        </>
                       ) : null}
                     </View>
-                    {m.status === 'processing' ? (
-                      <ProgressBar value={m.progress} label={t('library.status.processing')} />
-                    ) : null}
-                  </View>
+                  </Pressable>
                   <IconButton
                     icon={Ellipsis}
                     label={t('library.actionsFor', { title: m.title })}

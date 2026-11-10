@@ -30,8 +30,17 @@ sign-in, password reset, OAuth wiring, onboarding (languages, interests, first u
 and content-type toggles, Learning Paths and Practice views, Profile with synced preferences, learning-mode editor,
 AI feature status, sign-out and full account deletion.
 
-AI processing starts in Phase 2. Until provider keys are configured, uploads are stored and queued, and the app
-shows them as **waiting for AI setup**. Nothing is simulated.
+**Phase 2 (material management) is complete:** the worker reads PDF (including bookmarks and scanned pages),
+Word (.docx), PowerPoint (.pptx), EPUB, web pages, Markdown, plain text and photos; splits them into passages with
+page numbers; builds a search index (Voyage embeddings); and has Claude extract chapters, topics, key ideas and
+prerequisite links. Every key idea that claims to come from the material must quote it, and the quote is checked
+word for word against the passage before it is stored; anything else is stored only if the AI declared it as its own
+addition, and the app labels it that way. The Library shows live progress, failures with a reason and a retry,
+chapters, topics, and the source quote and page behind each key idea. Nothing is generated for the feed yet: that is
+on demand, from this knowledge, in Phase 3.
+
+Until `ANTHROPIC_API_KEY` and `VOYAGE_API_KEY` are configured (see [docs/environment.md](docs/environment.md)),
+uploads are stored and queued, and the app shows them as **waiting for AI setup**. Nothing is simulated.
 
 ## Running locally
 
@@ -45,11 +54,14 @@ cp apps/app/.env.example apps/app/.env.local          # fill in the anon key pri
 cp services/ai/.env.example services/ai/.env          # fill in the service role key
 
 cd services/ai && uv sync
-uv run uvicorn strata_ai.main:app --port 8000        # API
-uv run python -m strata_ai.worker.main               # job worker (separate terminal)
+uv run strata-api                                     # API on http://127.0.0.1:8000
+uv run strata-worker                                  # job worker (separate terminal)
 
 npm run web                                           # app at http://localhost:8081
 ```
+
+On Windows, use `copy` instead of `cp`, and keep the clone in a path without `#`, which can break the Expo
+bundler. `strata-api` and `strata-worker` pick an event loop that works on Windows.
 
 Every variable is described in [docs/environment.md](docs/environment.md).
 

@@ -11,6 +11,7 @@ export function describeError(error: unknown, t: TFunction): string {
     file_too_large: 'errors.fileTooLarge',
     upload_missing: 'errors.uploadMissing',
     not_found: 'errors.notFound',
+    not_retryable: 'errors.notRetryable',
   };
   if (e.hint && known[e.hint]) return t(known[e.hint]);
   const message = e.message ?? '';
